@@ -1,0 +1,87 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": ["SPDD.md"],
+  "default_agent": "sdd",
+  "command": {
+    "sdd:spec": {
+      "template": "Execute SDD Phase 1 (Spec). Read the functional requirements provided, ask clarifying questions if ambiguous, then produce sdd/specs/<feature>/spec.md following the spec template from the SDD agent prompt.",
+      "description": "Phase 1: Produce structured spec from requirements",
+      "subtask": true
+    },
+    "sdd:design": {
+      "template": "Execute SDD Phase 2 (Design). Read the latest spec from sdd/specs/, scan existing codebase for conventions, then produce sdd/specs/<feature>/design.md following the design structure from the SDD agent prompt.",
+      "description": "Phase 2: Produce technical design from spec",
+      "subtask": true
+    },
+    "sdd:breakdown": {
+      "template": "Execute SDD Phase 3 (Task Breakdown). Read spec.md and design.md from sdd/specs/, then produce sdd/specs/<feature>/tasks.md with small independent tasks following the Task Template from the SDD agent prompt. Each task must be implementable by SPDD.",
+      "description": "Phase 3: Break spec into small SPDD-implementable tasks",
+      "subtask": true
+    },
+    "sdd:execute": {
+      "template": "Execute SDD Phase 4 (Delegate to SPDD). Read the specified task from tasks.md. Produce analysis in spdd/analysis/, then a REASONS Canvas in spdd/prompts/, then run risk review, TDD generate, and perftest. Verify all ACs. Update task status.",
+      "description": "Phase 4: Execute a task via SPDD methodology",
+      "subtask": true
+    },
+    "sdd:update": {
+      "template": "Execute SDD Phase 5 (Spec Update). Update spec.md, design.md, and tasks.md to reflect new or changed requirements. Append to changelog.md. Re-delegate affected tasks to SPDD.",
+      "description": "Phase 5: Update spec (spec-anchored) when requirements change",
+      "subtask": true
+    },
+    "sdd:status": {
+      "template": "Read the latest sdd/specs/ structure and report the status of each feature, each task (pending/in-progress/completed/blocked) in Brazilian Portuguese.",
+      "description": "Show current spec and task status",
+      "subtask": true
+    },
+    "spdd:story": {
+      "template": "Execute the SPDD Story phase: break the current requirements into independent, deliverable user stories following INVEST principle (1-5 days each). Include acceptance criteria in business language for each story. Save to spdd/analysis/.",
+      "description": "Break requirements into INVEST-compliant user stories",
+      "subtask": true
+    },
+    "spdd:analyze": {
+      "template": "Execute the SPDD Analysis phase on the current requirements. Extract domain keywords from the requirements, scan the relevant parts of the codebase (not all of it), identify existing concepts vs new concepts, surface key business rules, risks, edge cases, and design direction. Save the analysis to spdd/analysis/ with a timestamp prefix.",
+      "description": "Analyze requirements and produce strategic analysis with codebase context",
+      "subtask": true
+    },
+    "spdd:canvas": {
+      "template": "Generate a complete REASONS Canvas from the analysis context. Cover ALL 7 dimensions: Requirements (acceptance criteria, DoD, performance SLAs/ACs), Entities (domain model, relationships, business rules), Approach (design strategy, patterns, trade-offs, risk mitigation), Structure (components, dependencies, API contracts, language-specific DDD or Hexagonal package layout), Operations (concrete method-level implementation steps in order, each task independently testable via TDD, performance test tasks at the end), Norms (naming, error handling, observability, testing standards), Safeguards (non-negotiable constraints, invariants, security, performance SLOs with pass/fail thresholds). Save to spdd/prompts/ with a descriptive name.",
+      "description": "Generate REASONS Canvas structured prompt from analysis",
+      "subtask": true
+    },
+    "spdd:generate": {
+      "template": "Read the latest REASONS Canvas from spdd/prompts/. For each task in Operations, follow strict TDD: RED (write failing test first), GREEN (write minimal code to pass), REFACTOR (clean up). Only advance to next task when ALL tests pass. Adhere to Norms and Safeguards. No scope creep. Verify against acceptance criteria.",
+      "description": "Implement code using TDD (Red → Green → Refactor) per Canvas task",
+      "subtask": true
+    },
+    "spdd:test": {
+      "template": "Read the latest REASONS Canvas from spdd/prompts/. Derive FUNCTIONAL test scenarios from the Operations section for TDD implementation. Cover: normal flow, boundary conditions, error cases, and edge cases. Save to spdd/tests/. For performance tests, use /spdd:perftest instead.",
+      "description": "Derive test scenarios for TDD implementation",
+      "subtask": true
+    },
+    "spdd:sync": {
+      "template": "Compare the current code against the REASONS Canvas in spdd/prompts/. Identify any code-side changes (refactoring, fixes, new components) that are not reflected in the Canvas. Update the Canvas to match the current code state. This is a code-to-prompt sync (for prompt-to-code updates, fix the Canvas first then regenerate).",
+      "description": "Sync code changes back to the REASONS Canvas",
+      "subtask": true
+    },
+    "spdd:update": {
+      "template": "Incrementally update the REASONS Canvas when requirements change. Determine which REASONS dimensions are affected by the change and update only those sections. Do NOT regenerate the entire Canvas. After updating the Canvas, regenerate code to match.",
+      "description": "Update REASONS Canvas when requirements change (prompt-first)",
+      "subtask": true
+    },
+    "spdd:risk-review": {
+      "template": "Read the latest REASONS Canvas from spdd/prompts/ and analysis from spdd/analysis/. Validate: (1) every identified risk has a mitigation in Approach, (2) critical risks are explicitly accepted, (3) no risk blocks implementation. Document outcome in spdd/analysis/ with risk-review- prefix. If review fails, loop back.",
+      "description": "Validate implementation risks before code generation",
+      "subtask": true
+    },
+    "spdd:perftest": {
+      "template": "Read the latest REASONS Canvas from spdd/prompts/. Derive performance test scenarios from Requirements (performance ACs) and Safeguards (SLOs). HTTP tests: use Vegeta (preferred) or Apache Benchmark. Broker tests (RabbitMQ, Kafka): use K6. Save to spdd/tests/ with 'perf-' prefix. Block deploy if any Safeguard is violated.",
+      "description": "Generate performance tests from the REASONS Canvas",
+      "subtask": true
+    },
+    "spdd:review": {
+      "template": "Review the current implementation against the REASONS Canvas. Check: (1) Architecture - does the code follow the 3-tier/defined architecture? (2) Business logic - does the Service layer match the Canvas intent? (3) Scope - are changes confined to Canvas boundaries? Report any gaps found.",
+      "description": "Review implementation against the REASONS Canvas",
+      "subtask": true
+    }
+  }
+}

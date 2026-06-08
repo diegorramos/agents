@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(**)",
+      "Exec(git)",
+      "Exec(npm run*)",
+      "Exec(npx*)",
+      "Exec(pip*)",
+      "Exec(cargo*)",
+      "Exec(go*)",
+      "Exec(echo*)",
+      "Exec(vegeta*)",
+      "Exec(ab*)",
+      "Exec(k6*)"
+    ],
+    "deny": [
+      "Exec(sudo*)"
+    ]
+  },
+  "read_config_from": {
+    "cursor": true,
+    "windsurf": true,
+    "claude": true
+  }
+}
