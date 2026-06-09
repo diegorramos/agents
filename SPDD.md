@@ -32,18 +32,29 @@ Generate a structured prompt covering ALL 7 dimensions. Save to `spdd/prompts/`:
 - Acceptance criteria (Given/When/Then with concrete examples)
 - Definition of Done
 - **Performance SLAs/ACs** (e.g., p99 < 200ms with 1000 concurrent users)
+- **Ubiquitous Language**: use domain terms from stakeholders literally in acceptance
+  criteria — the same words must appear in code, tests, and documentation
 
 **E - Entities**
 
 - Domain entities, their fields, relationships, and lifecycle
 - New vs existing entities
 - Key business rules and invariants
+- **Aggregate design** (Java/Kotlin/Rust): identify Aggregate Root, internal entities,
+  boundary, and invariants protected by the root
+- **Value Objects** (Java/Kotlin/Rust): list VOs and their immutability contract
+- **Domain Events**: list events emitted by this feature (past tense — `OrderPlaced`)
+- **Domain Services** (Java/Kotlin/Rust): identify logic that belongs to no single entity
 
 **A - Approach**
 
 - Design strategy (patterns, algorithms)
 - Architectural decisions and trade-offs
 - Extension points for future changes
+- **OCP decision** (Java/Kotlin/Rust): document whether new behaviour is added via
+  polymorphism/strategy or if/else — justify the choice
+- **Context Map**: document how this Bounded Context relates to neighbours
+  (ACL, events, shared kernel, customer/supplier)
 - **Risk mitigation**: for each risk identified in Analysis, document strategy
   (avoid, transfer, mitigate, accept) and contingency plan
 - **Risk owner**: who is responsible for monitoring and responding to each risk
@@ -53,6 +64,10 @@ Generate a structured prompt covering ALL 7 dimensions. Save to `spdd/prompts/`:
 - Where changes fit in the codebase (layers, modules)
 - Component dependencies and interfaces
 - API contracts (request/response shapes)
+- **DIP enforced by structure** (Java/Kotlin/Rust): domain defines interfaces
+  (Repository, EventPublisher); infrastructure implements — never the reverse
+- **Bounded Context boundary**: list which external contexts this feature touches
+  and how (API call, event, ACL)
 - **Package organization follows language-specific architecture pattern:**
 
   **DDD (Eric Evans)** — Java, Kotlin, Rust:
@@ -102,6 +117,8 @@ Generate a structured prompt covering ALL 7 dimensions. Save to `spdd/prompts/`:
 - Concrete implementation steps (method-level)
 - Task breakdown in execution order
 - Each task is independently testable — **write the test first (TDD)**
+- **Domain Events**: publishing the event is an explicit task after persistence —
+  never implicit or inside the aggregate
 - **Performance test tasks go at the end** (after all functional code)
 
 **N - Norms**
@@ -300,6 +317,150 @@ Detailed, language-specific rules to be applied in the **N - Norms** Canvas dime
 
 ---
 
+### SOLID Principles (Java / Kotlin / Rust only)
+
+> Go and Node.js: apply SRP and DIP only. The remaining principles do not map
+> naturally to these languages and must not be forced.
+
+**SRP — Single Responsibility**
+- Each class has one reason to change — one actor that can demand a modification
+- Strict role separation:
+  - `Entity` / `Aggregate`: holds business rules and protects invariants
+  - `Application Service` / `Use Case`: orchestrates flow — no business logic
+  - `Domain Service`: stateless logic that belongs to no single entity
+  - `Repository`: persistence abstraction — defined by domain, implemented by infra
+  - `Controller` / `Handler`: translates external input — no business logic
+- Symptom of violation: a class that changes for two unrelated reasons
+  (e.g., `UserService` that validates, persists, sends email, and generates reports)
+
+**OCP — Open/Closed**
+- Open for extension, closed for modification
+- Add new behaviour without changing existing code — via polymorphism and strategy pattern
+- Symptom of violation: `if/else` or `switch` growing with every new business type
+```java
+// Violation
+if (payment.type == CREDIT) { ... }
+else if (payment.type == PIX)  { ... }
+
+// OCP — new payment types without touching existing code
+interface PaymentProcessor { void process(Payment p); }
+class CreditProcessor implements PaymentProcessor { ... }
+class PixProcessor    implements PaymentProcessor { ... }
+```
+
+**LSP — Liskov Substitution**
+- Subtypes must be substitutable for their base type without breaking behaviour
+- Preconditions cannot be more restrictive in the subclass
+- Postconditions cannot be weaker in the subclass
+- Symptom of violation: subclass throws `UnsupportedOperationException` on an
+  inherited method — enforced as a hard block in Safeguards
+
+**ISP — Interface Segregation**
+- Clients must not depend on methods they do not use
+- Break large interfaces into small, cohesive ones segregated by use case need
+```java
+// Violation — not every repository needs bulk import
+interface Repository<T> {
+    T findById(Long id);
+    void save(T entity);
+    void bulkImport(List<T> entities);
+}
+
+// ISP
+interface Reader<T>     { T findById(Long id); }
+interface Writer<T>     { void save(T entity); }
+interface BulkWriter<T> { void bulkImport(List<T> entities); }
+```
+
+**DIP — Dependency Inversion**
+- High-level modules must not depend on low-level modules — both depend on abstractions
+- Domain defines the interface; infrastructure implements it
+- Already enforced by the DDD/Hexagonal package structure — never import infra types
+  into the domain layer
+
+---
+
+### DDD Tactical Patterns (Java / Kotlin / Rust only)
+
+> Ubiquitous Language and Application Service rule apply to **all languages**.
+> Aggregate, Value Object, Domain Service, Repository, Factory, and Domain Event
+> patterns apply to Java, Kotlin, and Rust only.
+
+**Ubiquitous Language (all languages)**
+- Use domain terms from stakeholders literally in code, tests, and documentation
+- Forbidden in domain layer: `Manager`, `Helper`, `Util`, `Data`, `Info`, `Processor`
+  (unless the business actually calls it that)
+- If the business says "pedido", the code has `Order` — not `OrderDTO`, `OrderEntity`
+
+**Value Objects**
+- Defined by attributes, not identity — two VOs with the same data are equal
+- Always immutable — use `record` (Java 16+), `data class` (Kotlin), `struct` (Rust)
+- Never use `null` inside a VO — validate in the constructor/factory
+```java
+public record Money(BigDecimal amount, Currency currency) {
+    public Money {
+        Objects.requireNonNull(amount, "amount required");
+        Objects.requireNonNull(currency, "currency required");
+        if (amount.compareTo(BigDecimal.ZERO) < 0)
+            throw new IllegalArgumentException("amount must be non-negative");
+    }
+}
+```
+
+**Aggregate**
+- Cluster of entities and VOs treated as a consistency unit
+- Only the Aggregate Root is accessible from outside — internal entities are never
+  returned or modified directly
+- Transactions do not cross aggregate boundaries — use Domain Events for
+  cross-aggregate consistency
+
+**Domain Service**
+- Stateless — no fields, no state between calls
+- Used only when logic belongs to no single entity or VO
+- Example: `PricingService.calculateDiscount(Order, CustomerTier)`
+
+**Application Service (all languages)**
+- Orchestrates the flow: fetch aggregate → call domain method → persist → publish event
+- Contains zero business logic — all decisions live in the domain
+- Symptom of violation: `if/else` on business rules inside the use case class
+
+**Factory**
+- Use when construction is complex or must enforce creation invariants
+- Prefer static factory methods (Effective Java Item 1) or a dedicated Factory class
+  over telescoping constructors
+
+**Domain Event**
+- Represents something significant that happened — named in past tense
+- Immutable — it is a fact, not a command
+- Published as an explicit step in Operations, after persistence — never inside
+  the aggregate method itself
+
+---
+
+### Effective Java Best Practices (Java / Kotlin only)
+
+- **Item 1** — Prefer static factory methods over constructors when the name
+  adds clarity (`Money.of(100, BRL)` over `new Money(100, BRL)`)
+- **Item 2** — Use Builder when a constructor has 4+ parameters or optional fields
+- **Item 17** — Minimise mutability; prefer immutable classes — immutable objects
+  are thread-safe by nature
+- **Item 18** — Favour composition over inheritance; use inheritance only when
+  a true is-a relationship exists and the superclass is designed for it
+- **Item 54** — Return empty collections (`List.of()`, `Collections.emptyList()`),
+  never `null`
+- **Item 55** — Return `Optional<T>` for absent values; never use `Optional` as a
+  field, constructor parameter, or method parameter
+- **Item 61** — Prefer primitives over boxed primitives; auto-unboxing `null`
+  throws `NullPointerException`
+- **Item 72** — Use standard exceptions: `IllegalArgumentException`,
+  `IllegalStateException`, `UnsupportedOperationException`, `NullPointerException`
+- **Item 73** — Exception translation: catch low-level exceptions at layer boundaries
+  and rethrow as domain or application exceptions
+- **Item 77** — Never ignore exceptions — empty `catch` blocks are forbidden
+  (enforced also in Safeguards)
+
+---
+
 ### Null-Safety — Java 17+
 
 - **Never return `null` from public methods** — use `Optional<T>` for absent values in queries;
@@ -459,6 +620,19 @@ Detailed rules to be applied in the **S - Safeguards** Canvas dimension.
 - [ ] Rate limiting by IP and by authenticated user on all public endpoints.
 - [ ] Timeout configured on all outbound calls (HTTP, DB, cache).
 - [ ] Circuit breaker on critical dependencies.
+
+**SOLID & DDD Invariants (Java / Kotlin / Rust only)**
+- [ ] LSP: no subclass throws `UnsupportedOperationException` on an inherited method
+      or silently ignores a postcondition of the parent contract.
+- [ ] Aggregate boundary: transactions do not cross aggregate boundaries;
+      internal entities are never exposed or modified directly from outside.
+- [ ] Repository rule: no repository interface for an entity that is internal
+      to an aggregate — only Aggregate Roots have repositories.
+- [ ] ACL: domain layer never imports types from external Bounded Contexts directly;
+      an Anti-Corruption Layer or shared event contract is mandatory.
+- [ ] Application Service: no business logic (`if/else` on domain rules) inside
+      use case / application service classes.
+- [ ] Empty catch: no `catch` block that swallows exceptions silently (Effective Java Item 77).
 
 ---
 
