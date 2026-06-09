@@ -482,6 +482,34 @@ public record Money(BigDecimal amount, Currency currency) {
 - **Item 77** — Never ignore exceptions — empty `catch` blocks are forbidden
   (enforced also in Safeguards)
 
+**Small Functions and Method References (Java 17+)**
+- **Small functions principle**: each method does one thing — if a method needs a comment
+  to explain what a block does, extract that block into a well-named private method;
+  aim for methods that fit on a screen without scrolling (~20 lines max)
+
+- **Method references over lambdas in transformations**: when using `map`, `flatMap`,
+  `filter`, `forEach` and similar stream operations, prefer method references over
+  lambdas when equally or more readable:
+
+  ```java
+  // Prefer
+  orders.stream()
+        .map(Order::getCustomer)
+        .map(Customer::getName)
+        .collect(toList());
+
+  // Avoid unnecessary lambdas
+  orders.stream()
+        .map(order -> order.getCustomer())
+        .map(customer -> customer.getName())
+        .collect(toList());
+
+  // Lambda acceptable when logic is non-trivial
+  orders.stream()
+        .filter(order -> order.total().compareTo(MINIMUM) > 0)
+        .collect(toList());
+  ```
+
 ---
 
 ### Null-Safety — Java 17+
