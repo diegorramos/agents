@@ -639,6 +639,100 @@ public record Money(BigDecimal amount, Currency currency) {
 
 ---
 
+### Documentation Standards
+
+**General Rule**
+- Document only what is necessary — avoid noise and redundant comments
+- Code should be self-documenting: clear naming eliminates need for explanation
+- Comments explain **why**, not **what** — the code shows what; comments explain intent
+
+**Javadoc / Doc Comments**
+
+**When to write:**
+- Public API boundaries (interfaces, public methods, public classes)
+- Complex algorithms or non-obvious logic
+- Aggregate roots and Domain Services: document the business rule being protected
+- Factory methods: document invariants enforced during creation
+- Exceptions: document which conditions trigger each exception type
+
+**When NOT to write:**
+- Trivial getters/setters — `getId()` does not need "returns the id"
+- Simple one-liner methods — obvious from signature
+- Implementation details inside private methods — use inline comments if needed
+- Constants with obvious names — `MAX_RETRIES` does not need explanation
+- Test methods — use `@DisplayName` instead (mandatory for Java)
+
+**Style rules (all languages with doc comments)**
+- Write in present tense, active voice: "Returns the order" not "Will return" or "Returned"
+- For methods: start with a verb — "Calculates", "Validates", "Publishes"
+- For classes: start with a noun — "Aggregate root for managing orders"
+- Keep first sentence under 80 characters — it's the summary
+- Parameter and return type descriptions are mandatory for public methods
+- Document exceptions for public methods — which exception, under what condition
+- Example:
+  ```java
+  /**
+   * Calculates the discount for an order based on customer tier and total amount.
+   *
+   * @param order the order to evaluate (must not be null)
+   * @param tier the customer tier (must not be null)
+   * @return the discount percentage as a value between 0 and 1
+   * @throws IllegalArgumentException if order or tier is null
+   * @throws DomainException if order total is negative
+   */
+  public BigDecimal calculateDiscount(Order order, CustomerTier tier) { ... }
+  ```
+
+**Interface Documentation (OO languages)**
+- Every public interface must have a class-level doc comment explaining its contract
+- Every method in a public interface must have a doc comment
+- Document the intent: "What is this interface for?" not "This is an interface"
+- Example:
+  ```java
+  /**
+   * Defines the contract for persisting and retrieving order aggregates.
+   *
+   * Implementations must ensure all operations are atomic and consistent.
+   * Never expose internal order entities — only the aggregate root.
+   */
+  public interface OrderRepository {
+      /**
+       * Retrieves an order by its unique identifier.
+       *
+       * @param id the order identifier (must not be null)
+       * @return the order if found, empty otherwise
+       */
+      Optional<Order> findById(OrderId id);
+  }
+  ```
+
+**Comments (inline)**
+- Use sparingly — only to explain **why**, not **what**
+- If you need a comment to explain what code does, refactor into a well-named method instead
+- Never comment out code — delete it or use version control
+- Example:
+  ```java
+  // Bad
+  i++; // increment i
+
+  // Good — no comment needed, clear from context
+  currentRetryCount++;
+
+  // Good — explains why, not what
+  // We cap retries at 3 because the upstream API has a 5-second timeout
+  // and each retry adds latency; 3 attempts ≈ 15s which is our SLA limit
+  if (retryCount >= MAX_RETRIES) { ... }
+  ```
+
+**No documentation needed**
+- Getters, setters, equals, hashCode, toString — generate them (IDE or Lombok)
+- Test methods — use `@DisplayName` (Java) or clear test name instead
+- Obvious implementations: `public List<T> getItems() { return items; }`
+- Constants: `private static final int TIMEOUT_MS = 5000;` — obvious
+- Package-private or private code: optional, use inline comments sparingly if needed
+
+---
+
 ## Safeguards Reference
 
 Detailed rules to be applied in the **S - Safeguards** Canvas dimension.
