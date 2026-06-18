@@ -1,7 +1,7 @@
 # Performance Tests
 
 Run ONLY after ALL functional tests are green.
-Read SLOs from Canvas Safeguards — block deploy if any is violated.
+Read SLOs from `spdd/s-safeguards.md` — block deploy if any is violated.
 Save to: `spdd/tests/perf-<feature>.md`
 
 ---
@@ -59,7 +59,7 @@ export default function () {
   const result = producer.produce([msg]);
   check(result, {
     'message produced': (r) => r.length === 1,
-    'no errors': (r) => r[0].error === '',
+    'no errors':        (r) => r[0].error === '',
   });
   sleep(0.1);
 }
@@ -81,10 +81,10 @@ export default function () {
     amount: Math.random() * 1000,
   });
   const result = amqp.publish({
-    url: 'amqp://guest:guest@localhost:5672/',
-    exchange: 'order.exchange',
-    routing_key: 'order.created',
-    body: body,
+    url:          'amqp://guest:guest@localhost:5672/',
+    exchange:     'order.exchange',
+    routing_key:  'order.created',
+    body:         body,
     content_type: 'application/json',
   });
   check(result, { 'message published': (r) => r === true });
