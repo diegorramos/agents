@@ -3,12 +3,14 @@
 ---
 
 ## Classify each identified risk
+
 - Severity: low / medium / high / critical
 - Likelihood: low / medium / high
 - Impact area: domain / performance / security / integration
 - Affected entities
 
 ## Mitigation strategies
+
 - **avoid** — change design to eliminate the risk entirely
 - **transfer** — delegate to external system or library
 - **mitigate** — reduce likelihood or impact with a specific action
