@@ -11,15 +11,16 @@ echo "Installing SDD+SPDD into $TARGET..."
 cp AGENTS.md "$TARGET/AGENTS.md"
 echo "  ✓ AGENTS.md"
 
-# Referências SPDD (lidas sob demanda pelas skills)
+# REASONS files + workflow files (lidos sob demanda pelas skills)
 mkdir -p "$TARGET/spdd"
 cp spdd/*.md "$TARGET/spdd/"
-echo "  ✓ spdd/ (canvas.md, tdd.md, risks.md, perftest.md)"
+echo "  ✓ spdd/ (REASONS Canvas files + tdd + risks + perftest):"
+ls spdd/*.md | xargs -I{} basename {} | sed 's/^/      - /'
 
 # Skills agnósticas (.agents/skills/)
 mkdir -p "$TARGET/.agents/skills"
 cp -r .agents/skills/* "$TARGET/.agents/skills/"
-echo "  ✓ .agents/skills/"
+echo "  ✓ .agents/skills/:"
 ls "$TARGET/.agents/skills/" | sed 's/^/      - /'
 
 echo ""
