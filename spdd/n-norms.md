@@ -13,6 +13,20 @@ Detailed, language-specific rules to be applied in the N dimension of the Canvas
 - Packages: `lowercase.separated.by.dots`
 - Kotlin: prefer `data class` for DTOs; `sealed class` for typed results with error branches
 
+**Code Formatter — Java**
+- Formatter: **Checkstyle** (`config/checkstyle/checkstyle.xml`) via `maven-checkstyle-plugin`
+- If the project already uses **Spotless**: remove `spotless-maven-plugin` from `pom.xml`
+  before any implementation task — never keep both simultaneously
+- Line max: **120 characters**; indent: **4 spaces** — no tabs
+- Imports: no wildcard; ordered `java → javax → org → com`; no unused imports
+- Pipeline indentation: each operator (`.map`, `.flatMap`, `.filter`, `.orElse`,
+  `.switchIfEmpty`, `.onErrorResume`, etc.) on its own line; `.` at the start of the next line
+- Braces: K&R style — opening brace on the same line, closing brace alone on its own line
+- `Optional.get()` is forbidden — use `.orElse()`, `.orElseGet()`, or `.orElseThrow()`
+- `.block()` is forbidden in production code — return `Mono`/`Flux` or use `subscribe()`
+- Logger: SLF4J only — `System.out`, `System.err`, and `e.printStackTrace()` are forbidden
+- Run `mvn checkstyle:check` before marking any task done
+
 **Go**
 - Exported identifiers: `PascalCase` — `OrderHandler`, `CreateOrder`
 - Unexported identifiers: `camelCase` — `parseRequest`, `validateInput`
@@ -133,6 +147,10 @@ interface BulkWriter<T> { void bulkImport(List<T> entities); }
 **Small Functions and Method References (Java 17+)**
 - Each method does one thing — if a method needs a comment to explain what a block does,
   extract that block into a well-named private method; aim for ~20 lines max
+- **Lambda with internal logic → extract to a private method**; if the method signature
+  is compatible with the expected functional interface → use `this::method` (method reference)
+- Use lambda only when it captures a variable from the outer scope that prevents extraction,
+  or when the logic is trivial (single expression with no business meaning)
 
 ```java
 // Prefer method references
@@ -151,6 +169,19 @@ orders.stream()
 orders.stream()
       .filter(order -> order.total().compareTo(MINIMUM) > 0)
       .collect(toList());
+
+// Lambda with internal logic → extract to private method + method reference
+// Bad
+flux.flatMap(order -> customerRepo.findById(order.getCustomerId())
+        .map(customer -> new OrderSummary(order, customer)));
+
+// Good
+flux.flatMap(this::enrichWithCustomer);
+
+private Mono<OrderSummary> enrichWithCustomer(Order order) {
+    return customerRepo.findById(order.getCustomerId())
+            .map(customer -> new OrderSummary(order, customer));
+}
 ```
 
 ---
