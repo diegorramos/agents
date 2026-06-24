@@ -7,17 +7,14 @@ TARGET=${1:-.}
 
 echo "Installing SDD+SPDD into $TARGET..."
 
-# AGENTS.md na raiz do projeto alvo
 cp AGENTS.md "$TARGET/AGENTS.md"
 echo "  ✓ AGENTS.md"
 
-# REASONS files + workflow files (lidos sob demanda pelas skills)
 mkdir -p "$TARGET/spdd"
 cp spdd/*.md "$TARGET/spdd/"
 echo "  ✓ spdd/ (REASONS Canvas files + tdd + risks + perftest):"
 ls spdd/*.md | xargs -I{} basename {} | sed 's/^/      - /'
 
-# Skills agnósticas (.agents/skills/)
 mkdir -p "$TARGET/.agents/skills"
 cp -r .agents/skills/* "$TARGET/.agents/skills/"
 echo "  ✓ .agents/skills/:"
