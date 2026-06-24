@@ -35,6 +35,14 @@ Non-negotiable constraints to be applied in the S dimension of the Canvas.
 
 ---
 
+## Code Style Gate (Java only)
+
+- [ ] Spotless (`spotless-maven-plugin`) removed from `pom.xml` if present — never coexist with Checkstyle
+- [ ] `config/checkstyle/checkstyle.xml` present in the repository
+- [ ] `mvn checkstyle:check` passes with zero violations — **blocks task completion if it fails**
+
+---
+
 ## SOLID & DDD Invariants (Java / Kotlin / Rust only)
 
 - [ ] LSP: no subclass throws `UnsupportedOperationException` on an inherited method
