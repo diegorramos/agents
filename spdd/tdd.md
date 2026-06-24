@@ -28,15 +28,10 @@ For EACH task in Canvas Operations (in order):
 
 - Improve code quality without changing behavior
 - Apply Norms from `spdd/n-norms.md` (naming, error handling, observability)
-- **Java projects**: run `mvn checkstyle:check` — fix all violations before advancing
-- **Java projects**: review every lambda in the changed code:
-  - Lambda with internal logic → extract to a private method
-  - Private method with compatible signature → convert to `this::method` reference
 - Run ALL existing tests → confirm nothing broke
 - **REFACTOR gate** — before marking the task done:
   - All tests pass (no regressions)
   - Norms applied: naming, error handling, observability
-  - `mvn checkstyle:check` passes with zero violations (Java projects)
   - No new behaviour introduced — refactor only
   - If a test breaks during refactor → revert the change, investigate, retry
 
@@ -50,8 +45,6 @@ All boxes must be checked before advancing to the next task:
 - [ ] Minimal production code written in Green — no scope creep
 - [ ] All tests pass after Refactor
 - [ ] Norms applied (naming, error handling, observability)
-- [ ] `mvn checkstyle:check` passes with zero violations (Java projects)
-- [ ] Lambdas with internal logic extracted to private methods; method references used where signature is compatible (Java projects)
 - [ ] Domain Event published if the task produces a side effect
 - [ ] No `TODO`, commented-out code, or debug statements left behind
 
