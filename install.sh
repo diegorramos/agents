@@ -3,11 +3,11 @@
 #
 # Usage:
 #   ./install.sh [TARGET]               — install into TARGET project (default: current dir)
-#   ./install.sh --global               — install into Devin global skills (add missing only)
-#   ./install.sh --global --force       — install into Devin global skills (overwrite all)
+#   ./install.sh --global               — install into Devin global dir (add missing only)
+#   ./install.sh --global --force       — install into Devin global dir (overwrite all)
 #
-# Devin global skills path: ~/.config/devin/skills/
-# On Windows:               %APPDATA%\devin\skills\
+# Devin global path: ~/.config/devin/
+# On Windows:        %APPDATA%\devin\
 
 set -e
 
@@ -55,30 +55,36 @@ copy_always() {
 
 # ── Mode: --global --force ─────────────────────────────────────────────────
 if $GLOBAL && $FORCE; then
-  echo "Installing SDD+SPDD into Devin global skills (OVERWRITE ALL)..."
-  echo "  Path: $DEVIN_GLOBAL_SKILLS"
+  echo "Installing SDD+SPDD into Devin global dir (OVERWRITE ALL)..."
+  echo "  Path: $DEVIN_GLOBAL_DIR"
   echo ""
 
-  echo "  ✓ spdd/ reference files:"
+  echo "  AGENTS.md:"
+  copy_always "AGENTS.md" "${DEVIN_GLOBAL_DIR}/AGENTS.md"
+
+  echo "  spdd/ reference files:"
   mkdir -p "${DEVIN_GLOBAL_DIR}/spdd"
   for f in spdd/*.md; do
     copy_always "$f" "${DEVIN_GLOBAL_DIR}/${f}"
   done
 
-  echo "  ✓ skills:"
+  echo "  skills:"
   for skill_dir in .agents/skills/*/; do
     skill_name=$(basename "$skill_dir")
     copy_always "${skill_dir}SKILL.md" "${DEVIN_GLOBAL_SKILLS}/${skill_name}/SKILL.md"
   done
 
   echo ""
-  echo "Done. All files overwritten in $DEVIN_GLOBAL_SKILLS"
+  echo "Done. All files overwritten in $DEVIN_GLOBAL_DIR"
 
 # ── Mode: --global (add missing only) ─────────────────────────────────────
 elif $GLOBAL; then
-  echo "Installing SDD+SPDD into Devin global skills (add missing only)..."
-  echo "  Path: $DEVIN_GLOBAL_SKILLS"
+  echo "Installing SDD+SPDD into Devin global dir (add missing only)..."
+  echo "  Path: $DEVIN_GLOBAL_DIR"
   echo ""
+
+  echo "  AGENTS.md:"
+  copy_if_missing "AGENTS.md" "${DEVIN_GLOBAL_DIR}/AGENTS.md"
 
   echo "  spdd/ reference files:"
   mkdir -p "${DEVIN_GLOBAL_DIR}/spdd"
@@ -101,15 +107,16 @@ else
   echo "Installing SDD+SPDD into project: $TARGET"
   echo ""
 
+  echo "  AGENTS.md:"
   copy_always "AGENTS.md" "${TARGET}/AGENTS.md"
 
-  echo "  ✓ spdd/ reference files:"
+  echo "  spdd/ reference files:"
   mkdir -p "${TARGET}/spdd"
   for f in spdd/*.md; do
     copy_always "$f" "${TARGET}/${f}"
   done
 
-  echo "  ✓ .agents/skills/:"
+  echo "  .agents/skills/:"
   mkdir -p "${TARGET}/.agents/skills"
   for skill_dir in .agents/skills/*/; do
     skill_name=$(basename "$skill_dir")
