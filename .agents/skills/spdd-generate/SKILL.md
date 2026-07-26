@@ -1,7 +1,7 @@
 ---
 name: spdd-generate
 description: >
-  Implement code using strict TDD (Red → Green → Refactor) per Canvas Operations.
+  Implement code using strict TDD (Red -> Green -> Refactor) per Canvas Operations.
   Use after spdd-risk-review passes.
 ---
 
